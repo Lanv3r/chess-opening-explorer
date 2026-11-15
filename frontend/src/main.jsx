@@ -23,7 +23,7 @@ function KeyboardNavigation() {
         event.metaKey ||
         event.shiftKey ||
         (event.target instanceof Element &&
-          event.target.closest("input, textarea, select, [contenteditable]"))
+          event.target.closest("dialog, input, textarea, select, [contenteditable]"))
       ) {
         return;
       }
@@ -66,7 +66,11 @@ function App() {
                 <BoardControls />
               </div>
             </div>
-            <MoveHistory className="history-panel" aria-label="Move history" />
+            <MoveHistory
+              className="history-panel"
+              aria-label="Move history"
+              style={{ height: "var(--panel-height)" }}
+            />
             <PopularMoves />
           </div>
         </ChessProvider>
