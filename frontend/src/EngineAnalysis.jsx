@@ -1,39 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Chess } from "chess.js";
 import { useChess } from "@mdwebb/react-chess";
+import { describeEngineLine } from "./enginePresentation.js";
 import { StockfishController } from "./stockfishController.js";
-
-function playUci(game, uci) {
-  if (!/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(uci)) return null;
-  try {
-    return game.move({
-      from: uci.slice(0, 2),
-      to: uci.slice(2, 4),
-      promotion: uci[4],
-    });
-  } catch {
-    return null;
-  }
-}
-
-function principalVariation(fen, moves) {
-  const game = new Chess(fen);
-  const notation = [];
-  for (const uci of moves.slice(0, 6)) {
-    const move = playUci(game, uci);
-    if (!move) break;
-    notation.push(move.san);
-  }
-  return notation.join(" ");
-}
-
-function whiteScore(fen, line) {
-  const score = fen.split(" ")[1] === "b" ? -line.score : line.score;
-  if (line.scoreType === "mate") {
-    return score < 0 ? `−M${Math.abs(score)}` : `M${score}`;
-  }
-  return `${score >= 0 ? "+" : ""}${(score / 100).toFixed(2)}`;
-}
 
 function EngineAnalysis() {
   const { fen, makeMove } = useChess();
@@ -113,27 +81,30 @@ function EngineAnalysis() {
                 <ol className="engine-analysis__lines">
                   {visible.lines.map((line) => {
                     const uci = line.pv[0];
-                    const variation = principalVariation(fen, line.pv);
-                    const san = variation.split(" ")[0] || uci;
+                    const { evaluation, winningSide, sequence, firstMove } =
+                      describeEngineLine(fen, line);
                     return (
                       <li key={line.rank}>
                         <button
                           type="button"
+                          title={sequence}
                           onClick={() =>
                             makeMove(uci.slice(0, 2), uci.slice(2, 4), uci[4])
                           }
-                          aria-label={`Play engine move ${san}`}
+                          aria-label={`Play ${firstMove}. Engine line ${sequence}, evaluation ${evaluation}`}
                         >
-                          <span className="engine-analysis__rank">{line.rank}.</span>
-                          <strong>{san}</strong>
-                          <span className="engine-analysis__score">{whiteScore(fen, line)}</span>
+                          <span
+                            className={`engine-analysis__evaluation engine-analysis__evaluation--${winningSide}`}
+                            aria-hidden="true"
+                          >
+                            {evaluation}
+                          </span>
+                          <span className="engine-analysis__sequence">{sequence}</span>
                         </button>
-                        <span className="engine-analysis__variation">{variation}</span>
                       </li>
                     );
                   })}
                 </ol>
-                <p className="engine-analysis__footnote">Scores are from White’s perspective.</p>
               </>
             ) : (
               <p>{visible.status === "complete" ? "No legal moves." : "Waiting for engine lines…"}</p>
