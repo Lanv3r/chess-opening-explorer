@@ -95,19 +95,41 @@ p {
   padding-left: 8px;
 }
 
-.history-panel {
+.history-column {
   min-width: 0;
   min-height: 0;
+  height: var(--panel-height);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #fff;
+  border: 1px solid #e9e4da;
+  border-radius: 12px;
+  box-shadow: 0 8px 28px rgb(50 39 23 / 5%);
 }
 
-.rc-move-history::before {
+.history-column .history-panel {
+  flex: 1 1 0;
+  min-height: 0;
+  border: 0;
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.history-panel::before {
   content: "Moves";
   display: block;
   flex: none;
-  padding: 16px 18px;
+  padding: 12px 14px;
   border-bottom: 1px solid #e9e4da;
   font-size: 0.95rem;
   font-weight: 700;
+}
+
+.history-panel .rc-move-history__moves {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .rc-move-history__moves-inner:empty::before {
@@ -288,6 +310,150 @@ p {
 
 .popular-moves__message button:hover {
   background: #f4eee5;
+}
+
+.engine-panel {
+  flex: 0 0 min(48%, 250px);
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  overflow: hidden;
+  border-bottom: 1px solid #e9e4da;
+}
+
+.engine-panel__header {
+  flex: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+  padding: 10px 12px 8px;
+}
+
+.engine-panel h2 {
+  min-width: 0;
+  margin: 0;
+  font-size: 0.9rem;
+  line-height: 1.2;
+}
+
+.engine-panel__intro {
+  min-height: 0;
+  padding: 0 12px 8px;
+  overflow-y: auto;
+  font-size: 0.78rem;
+}
+
+.engine-panel__header button,
+.engine-analysis__error button {
+  flex: none;
+  padding: 5px 8px;
+  border: 1px solid #805c3a;
+  border-radius: 6px;
+  background: #805c3a;
+  color: #fff;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+.engine-panel__header button:hover,
+.engine-analysis__error button:hover {
+  background: #67492d;
+}
+
+.engine-panel__header button:focus-visible {
+  outline: 2px solid #805c3a;
+  outline-offset: 2px;
+}
+
+.engine-analysis {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  padding: 0 10px 8px;
+}
+
+.engine-analysis__content {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  font-size: 0.78rem;
+}
+
+.engine-analysis__status {
+  margin-bottom: 6px;
+  font-size: 0.75rem;
+}
+
+.engine-analysis__lines {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.engine-analysis__lines li {
+  padding: 6px;
+  border-radius: 6px;
+  background: #faf8f4;
+}
+
+.engine-analysis__lines button {
+  display: grid;
+  grid-template-columns: 16px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.engine-analysis__lines button:hover strong {
+  text-decoration: underline;
+}
+
+.engine-analysis__lines button:focus-visible {
+  outline: 2px solid #805c3a;
+  outline-offset: 3px;
+}
+
+.engine-analysis__rank,
+.engine-analysis__variation,
+.engine-analysis__footnote {
+  color: #868078;
+  font-size: 0.75rem;
+}
+
+.engine-analysis__score {
+  font-weight: 700;
+}
+
+.engine-analysis__variation {
+  display: block;
+  margin: 3px 0 0 20px;
+  overflow: hidden;
+  line-height: 1.4;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.engine-analysis__footnote {
+  margin-top: 8px;
+}
+
+.engine-analysis__error button {
+  margin-top: 8px;
 }
 
 .filters-dialog {
@@ -473,7 +639,7 @@ p {
     justify-self: center;
   }
 
-  .history-panel {
+  .history-column {
     grid-column: 1;
     grid-row: 2;
   }
@@ -508,6 +674,23 @@ p {
 
   .popular-moves {
     padding: 10px;
+  }
+
+  .engine-panel__header {
+    padding: 6px 8px;
+  }
+
+  .engine-panel h2 {
+    font-size: 0.8rem;
+  }
+
+  .engine-panel__intro {
+    padding: 0 8px 6px;
+    font-size: 0.7rem;
+  }
+
+  .engine-analysis {
+    padding: 0 6px 6px;
   }
 
   .popular-moves__heading .eyebrow,
@@ -552,8 +735,8 @@ p {
     font-size: 0.8rem;
   }
 
-  .rc-move-history::before {
-    padding: 10px;
+  .history-panel::before {
+    padding: 8px;
     font-size: 0.8rem;
   }
 

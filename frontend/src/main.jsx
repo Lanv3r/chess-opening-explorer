@@ -9,6 +9,7 @@ import {
   useChess,
 } from "@mdwebb/react-chess";
 import "@mdwebb/react-chess/styles";
+import EnginePanel from "./EnginePanel.jsx";
 import PopularMoves from "./PopularMoves.jsx";
 import "./styles.css";
 
@@ -66,11 +67,14 @@ function App() {
                 <BoardControls />
               </div>
             </div>
-            <MoveHistory
-              className="history-panel"
-              aria-label="Move history"
-              style={{ height: "var(--panel-height)" }}
-            />
+            <div className="history-column">
+              <EnginePanel />
+              <MoveHistory
+                className="history-panel"
+                aria-label="Move history"
+                style={{ height: "auto" }}
+              />
+            </div>
             <PopularMoves />
           </div>
         </ChessProvider>

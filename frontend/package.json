@@ -4,14 +4,19 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "predev": "node scripts/prepare-stockfish.mjs",
     "dev": "vite",
+    "prebuild": "node scripts/prepare-stockfish.mjs",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "node --test"
   },
   "dependencies": {
     "@mdwebb/react-chess": "2.0.4",
+    "chess.js": "1.4.0",
     "react": "^19.2.0",
-    "react-dom": "^19.2.0"
+    "react-dom": "^19.2.0",
+    "stockfish": "19.0.1"
   },
   "devDependencies": {
     "vite": "^7.3.6"
