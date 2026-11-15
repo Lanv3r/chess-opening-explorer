@@ -6,6 +6,7 @@ import {
   RATING_GROUPS,
   TIME_CONTROLS,
 } from "./explorerQuery.js";
+import { boardMoveFromExplorer } from "./explorerMove.js";
 
 const resultsCache = new Map();
 const compactNumber = new Intl.NumberFormat("en", {
@@ -178,9 +179,10 @@ function PopularMoves() {
                     <button
                       className="popular-moves__row"
                       type="button"
-                      onClick={() =>
-                        makeMove(move.uci.slice(0, 2), move.uci.slice(2, 4), move.uci[4])
-                      }
+                      onClick={() => {
+                        const { from, to, promotion } = boardMoveFromExplorer(move);
+                        makeMove(from, to, promotion);
+                      }}
                       aria-label={`Play ${move.san}, ${formatShare(share)} of games`}
                     >
                       <span className="popular-moves__rank">{index + 1}.</span>
