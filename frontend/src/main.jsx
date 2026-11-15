@@ -1,7 +1,15 @@
 import React, { useEffect } from "react";
 import { createRoot } from "react-dom/client";
-import { Chessboard, useChess } from "@mdwebb/react-chess";
+import {
+  Board,
+  BoardControls,
+  ChessProvider,
+  MoveHistory,
+  Navigation,
+  useChess,
+} from "@mdwebb/react-chess";
 import "@mdwebb/react-chess/styles";
+import PopularMoves from "./PopularMoves.jsx";
 import "./styles.css";
 
 function KeyboardNavigation() {
@@ -45,22 +53,23 @@ function App() {
       <header className="intro">
         <span className="eyebrow">Opening practice</span>
         <h1>Chess Tutor</h1>
-        <p>Make moves, then revisit them with the controls, move list, or arrow keys.</p>
       </header>
 
-      <section className="board-area" aria-label="Interactive chessboard">
-        <Chessboard
-          width="min(88vw, 560px)"
-          height="min(88vw, 560px)"
-          theme="brown"
-          moveHistoryWidth={280}
-          showMoveHistory
-          showNavigation
-          showBoardControls
-          enableKeyboardNavigation={false}
-        >
+      <section className="board-area" aria-label="Chess opening explorer">
+        <ChessProvider theme="brown" enableKeyboardNavigation={false}>
           <KeyboardNavigation />
-        </Chessboard>
+          <div className="workspace">
+            <div className="board-column">
+              <Board width="var(--board-size)" height="var(--board-size)" />
+              <div className="board-controls">
+                <Navigation />
+                <BoardControls />
+              </div>
+            </div>
+            <MoveHistory className="history-panel" aria-label="Move history" />
+            <PopularMoves />
+          </div>
+        </ChessProvider>
       </section>
     </main>
   );
