@@ -122,7 +122,7 @@ function Workspace({
                     game={game}
                     fen={fen}
                     playerColor={session.playerColor}
-                    reason={botGame.message || botGame.outcome}
+                    reason={botGame.outcome ? null : botGame.message}
                     snapshot={engineSnapshot}
                     onClose={() => setResultDismissed(true)}
                   />

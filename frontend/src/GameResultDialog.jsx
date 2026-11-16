@@ -4,6 +4,7 @@ import { decisiveResult, finalEvaluation } from "./gameResult.js";
 function GameResultDialog({ game, fen, playerColor, reason, snapshot, onClose }) {
   const closeRef = useRef(null);
   const decisive = decisiveResult(game, playerColor);
+  const resultReason = decisive?.reason || reason;
   const finalLine = !decisive && snapshot?.fen === fen && snapshot.status === "complete"
     ? snapshot.lines?.find((line) => line.rank === 1)
     : null;
@@ -19,7 +20,7 @@ function GameResultDialog({ game, fen, playerColor, reason, snapshot, onClose })
         className="game-result-dialog"
         role="dialog"
         aria-labelledby={decisive ? "game-result-title" : "game-result-label"}
-        aria-describedby="game-result-reason"
+        aria-describedby={resultReason ? "game-result-reason" : undefined}
         onKeyDown={(event) => { if (event.key === "Escape") onClose(); }}
       >
         <button
@@ -33,7 +34,7 @@ function GameResultDialog({ game, fen, playerColor, reason, snapshot, onClose })
         </button>
         <span className="eyebrow" id="game-result-label">Game finished</span>
         {decisive && <h2 id="game-result-title">{decisive.title}</h2>}
-        <p id="game-result-reason">{decisive?.reason || reason}</p>
+        {resultReason && <p id="game-result-reason">{resultReason}</p>}
         {!decisive && (
           evaluation ? (
             <>

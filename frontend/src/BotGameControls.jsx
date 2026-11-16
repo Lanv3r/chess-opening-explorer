@@ -28,10 +28,8 @@ function BotGameControls({ session, gameState, plyCount, defaultFilters, auth, o
     ? "The game ends when a position has fewer rated games than this minimum."
     : `The game will terminate if fewer than ${parsedMinimum} rated games have reached this position`;
 
-  const status = finished
-    ? gameState.message || gameState.outcome
-    : gameState.botStatus === "auth-required"
-      ? "Connect Lichess to continue."
+  const status = gameState.botStatus === "auth-required"
+    ? "Connect Lichess to continue."
     : gameState.botStatus === "error"
       ? gameState.message
       : gameState.botTurn
@@ -83,10 +81,12 @@ function BotGameControls({ session, gameState, plyCount, defaultFilters, auth, o
     <div className="bot-game-controls">
       {playing ? (
         <>
-          <div className="bot-game-controls__status" aria-live="polite">
-            <strong>{status}</strong>
-            <small>{completedMoves} / {maxFullMoves} full moves</small>
-          </div>
+          {!finished && (
+            <div className="bot-game-controls__status" aria-live="polite">
+              <strong>{status}</strong>
+              <small>{completedMoves} / {maxFullMoves} full moves</small>
+            </div>
+          )}
           {gameState.botStatus === "error" && !finished && (
             <button type="button" onClick={gameState.retry}>Retry bot</button>
           )}

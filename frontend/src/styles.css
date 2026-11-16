@@ -430,6 +430,16 @@ p {
   font-size: 1.4rem;
 }
 
+.game-result-dialog > .eyebrow {
+  display: block;
+  color: #805c3a;
+  font-size: clamp(1.25rem, 4vw, 1.5rem);
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  line-height: 1.2;
+  text-transform: none;
+}
+
 .game-result-dialog h2 {
   margin: 8px 0 10px;
   font-size: clamp(1.2rem, 4vw, 1.65rem);
@@ -454,7 +464,8 @@ p {
 }
 
 .game-result-dialog__assessment {
-  font-weight: 700;
+  font-size: 0.9rem;
+  font-weight: 500;
 }
 
 .game-result-dialog__review {
