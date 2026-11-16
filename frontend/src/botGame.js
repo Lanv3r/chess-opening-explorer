@@ -1,7 +1,5 @@
-import { gameCount } from "./explorerData.js";
-
 export const DEFAULT_MAX_FULL_MOVES = 10;
-export const MIN_TOP_MOVE_GAMES = 100;
+export const DEFAULT_MIN_POSITION_GAMES = 50;
 
 export function parseMoveLimit(value) {
   const text = String(value).trim();
@@ -10,12 +8,12 @@ export function parseMoveLimit(value) {
   return Number.isSafeInteger(number) && number > 0 ? number : null;
 }
 
-export function topMoveGameCount(moves) {
-  return moves.reduce((highest, move) => Math.max(highest, gameCount(move)), 0);
+export function parseMinimumGames(value) {
+  return parseMoveLimit(value);
 }
 
-export function isPositionTooRare(moves) {
-  return topMoveGameCount(moves) < MIN_TOP_MOVE_GAMES;
+export function isPositionTooRare(totalGames, minimumGames = DEFAULT_MIN_POSITION_GAMES) {
+  return totalGames < minimumGames;
 }
 
 export function isBotTurn(fen, playerColor) {

@@ -6,11 +6,12 @@ import { fetchExplorerPosition } from "../src/explorerData.js";
 import { boardMoveFromExplorer } from "../src/explorerMove.js";
 import {
   DEFAULT_MAX_FULL_MOVES,
+  DEFAULT_MIN_POSITION_GAMES,
   gameOutcome,
   isBotTurn,
   isPositionTooRare,
+  parseMinimumGames,
   parseMoveLimit,
-  topMoveGameCount,
 } from "../src/botGame.js";
 import {
   allFilters,
@@ -64,15 +65,39 @@ test("move limit accepts positive whole numbers only", () => {
   assert.equal(parseMoveLimit("1e2"), null);
   assert.equal(parseMoveLimit(""), null);
   assert.equal(parseMoveLimit("999999999999999999999"), null);
+  assert.equal(parseMinimumGames("50"), 50);
+  assert.equal(parseMinimumGames("0"), null);
+  assert.equal(parseMinimumGames("2.5"), null);
 });
 
-test("game ends below 100 plays of the most popular move", () => {
-  const rare = [{ white: 49, draws: 50, black: 0 }];
-  const enough = [{ white: 49, draws: 51, black: 0 }];
-  assert.equal(topMoveGameCount(rare), 99);
-  assert.equal(isPositionTooRare(rare), true);
-  assert.equal(isPositionTooRare(enough), false);
-  assert.equal(isPositionTooRare([]), true);
+test("game ends below the configured total rated games in the position", () => {
+  assert.equal(DEFAULT_MIN_POSITION_GAMES, 50);
+  assert.equal(isPositionTooRare(0), true);
+  assert.equal(isPositionTooRare(49), true);
+  assert.equal(isPositionTooRare(50), false);
+  assert.equal(isPositionTooRare(99, 100), true);
+  assert.equal(isPositionTooRare(100, 100), false);
+});
+
+test("two moves below 100 each can still make the position playable", async (t) => {
+  t.mock.method(globalThis, "fetch", async () => ({
+    ok: true,
+    json: async () => ({
+      white: 110,
+      draws: 0,
+      black: 0,
+      moves: [
+        { uci: "e2e4", san: "e4", white: 60, draws: 0, black: 0 },
+        { uci: "d2d4", san: "d4", white: 50, draws: 0, black: 0 },
+      ],
+    }),
+  }));
+
+  const position = await fetchExplorerPosition("https://example.test/total-games", undefined, "test-token");
+  assert.equal(position.totalGames, 110);
+  assert.equal(position.moves[0].white, 60);
+  assert.equal(isPositionTooRare(position.totalGames), false);
+  assert.equal(isPositionTooRare(position.totalGames, 120), true);
 });
 
 test("eight available moves remain playable when the top move has 150 games", async (t) => {
@@ -98,8 +123,8 @@ test("eight available moves remain playable when the top move has 150 games", as
   assert.equal(fetchMock.mock.calls[0].arguments[1].headers.Authorization, "Bearer test-token");
   assert.equal(position.totalGames, 221);
   assert.equal(position.moves.length, 8);
-  assert.equal(topMoveGameCount(position.moves), 150);
-  assert.equal(isPositionTooRare(position.moves), false);
+  assert.equal(position.moves[0].white, 150);
+  assert.equal(isPositionTooRare(position.totalGames), false);
 
   const first = chooseBotMove(position.moves, () => 0);
   const last = chooseBotMove(position.moves, () => 0.999);

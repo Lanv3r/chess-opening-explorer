@@ -2,11 +2,10 @@ import { useEffect, useState } from "react";
 import { useChess } from "@mdwebb/react-chess";
 import { chooseBotMove } from "./botMove.js";
 import {
+  DEFAULT_MIN_POSITION_GAMES,
   gameOutcome,
   isBotTurn,
   isPositionTooRare,
-  MIN_TOP_MOVE_GAMES,
-  topMoveGameCount,
 } from "./botGame.js";
 import { boardMoveFromExplorer } from "./explorerMove.js";
 import { fetchExplorerPosition } from "./explorerData.js";
@@ -22,6 +21,7 @@ export function useBotGame(session, filters, auth) {
     positionData: null,
   }));
   const [retryCount, setRetryCount] = useState(0);
+  const minimumGames = session.minimumGames ?? DEFAULT_MIN_POSITION_GAMES;
   const outcome = session.mode === "bot"
     ? gameOutcome(game, moveHistory.length, session.maxFullMoves)
     : null;
@@ -62,14 +62,17 @@ export function useBotGame(session, filters, auth) {
     fetchExplorerPosition(requestUrl, controller.signal, auth.token)
       .then((positionData) => {
         if (controller.signal.aborted) return;
-        const topCount = topMoveGameCount(positionData.moves);
-        if (isPositionTooRare(positionData.moves)) {
+        const { totalGames, moves } = positionData;
+        const tooRare = isPositionTooRare(totalGames, minimumGames);
+        if (tooRare || moves.length === 0) {
           setState({
             phase: "finished",
             botStatus: "idle",
-            message: topCount === 0
+            message: totalGames === 0
               ? "No rated moves found for this position."
-              : `Most popular move has ${topCount} rated games (under ${MIN_TOP_MOVE_GAMES}).`,
+              : tooRare
+                ? `${totalGames} rated games reached this position (under ${minimumGames}).`
+                : "No rated moves available from this position.",
             checkedUrl: requestUrl,
             positionData,
           });
@@ -124,7 +127,7 @@ export function useBotGame(session, filters, auth) {
       });
 
     return () => controller.abort();
-  }, [active, botTurn, requestUrl, makeMove, retryCount, auth.status, auth.token]);
+  }, [active, botTurn, requestUrl, makeMove, retryCount, auth.status, auth.token, minimumGames]);
 
   return {
     ...state,

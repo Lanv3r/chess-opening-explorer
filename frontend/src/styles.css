@@ -175,24 +175,24 @@ body {
   accent-color: #805c3a;
 }
 
-.bot-setup-dialog__move-limit {
+.bot-setup-dialog__number-setting {
   margin: 0 0 18px;
 }
 
-.bot-setup-dialog__move-limit > label {
+.bot-setup-dialog__number-setting > label {
   display: block;
   margin-bottom: 8px;
   font-size: 0.88rem;
   font-weight: 700;
 }
 
-.bot-setup-dialog__limit-input {
+.bot-setup-dialog__number-input {
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.bot-setup-dialog__limit-input input {
+.bot-setup-dialog__number-input input {
   width: 110px;
   padding: 7px 9px;
   border: 1px solid #d9d2c8;
@@ -200,7 +200,7 @@ body {
   font: inherit;
 }
 
-.bot-setup-dialog__limit-input input[aria-invalid="true"] {
+.bot-setup-dialog__number-input input[aria-invalid="true"] {
   border-color: #ad3030;
 }
 

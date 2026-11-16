@@ -1,7 +1,8 @@
 import React, { useRef, useState } from "react";
 import {
   DEFAULT_MAX_FULL_MOVES,
-  MIN_TOP_MOVE_GAMES,
+  DEFAULT_MIN_POSITION_GAMES,
+  parseMinimumGames,
   parseMoveLimit,
 } from "./botGame.js";
 import ExplorerFilterFields from "./ExplorerFilterFields.jsx";
@@ -14,12 +15,18 @@ function BotGameControls({ session, gameState, plyCount, defaultFilters, auth, o
   const [showEngineMoves, setShowEngineMoves] = useState(false);
   const [moveLimit, setMoveLimit] = useState(String(DEFAULT_MAX_FULL_MOVES));
   const [moveLimitError, setMoveLimitError] = useState("");
+  const [minimumGames, setMinimumGames] = useState(String(DEFAULT_MIN_POSITION_GAMES));
+  const [minimumGamesError, setMinimumGamesError] = useState("");
   const [gameFilters, setGameFilters] = useState(() => gameSetupFilters(defaultFilters));
   const [dateError, setDateError] = useState("");
   const playing = session.mode === "bot";
   const finished = gameState.phase === "finished" || Boolean(gameState.outcome);
   const maxFullMoves = session.maxFullMoves ?? DEFAULT_MAX_FULL_MOVES;
   const completedMoves = Math.min(Math.floor(plyCount / 2), maxFullMoves);
+  const parsedMinimum = parseMinimumGames(minimumGames);
+  const minimumTooltip = parsedMinimum === null
+    ? "The game ends when a position has fewer rated games than this minimum."
+    : `The game will terminate if fewer than ${parsedMinimum} rated games have reached this position`;
 
   const status = finished
     ? gameState.message || gameState.outcome
@@ -37,6 +44,7 @@ function BotGameControls({ session, gameState, plyCount, defaultFilters, auth, o
     setGameFilters(gameSetupFilters(defaultFilters));
     setDateError("");
     setMoveLimitError("");
+    setMinimumGamesError("");
     dialogRef.current?.showModal();
   }
 
@@ -54,16 +62,19 @@ function BotGameControls({ session, gameState, plyCount, defaultFilters, auth, o
     if (auth.status !== "connected") return;
     const error = dateRangeError(gameFilters);
     const parsedLimit = parseMoveLimit(moveLimit);
+    const parsedMinimumGames = parseMinimumGames(minimumGames);
     if (error) {
       setDateError(error);
     }
     if (parsedLimit === null) setMoveLimitError("Enter a positive whole number.");
-    if (error || parsedLimit === null) return;
+    if (parsedMinimumGames === null) setMinimumGamesError("Enter a positive whole number.");
+    if (error || parsedLimit === null || parsedMinimumGames === null) return;
     onStart({
       playerColor,
       showEvaluation,
       showEngineMoves,
       maxFullMoves: parsedLimit,
+      minimumGames: parsedMinimumGames,
       filters: copyFilters(gameFilters),
     });
   }
@@ -87,6 +98,7 @@ function BotGameControls({ session, gameState, plyCount, defaultFilters, auth, o
                 showEvaluation: session.showEvaluation,
                 showEngineMoves: session.showEngineMoves,
                 maxFullMoves: session.maxFullMoves,
+                minimumGames: session.minimumGames,
                 filters: copyFilters(session.filters),
               })}
             >
@@ -136,9 +148,9 @@ function BotGameControls({ session, gameState, plyCount, defaultFilters, auth, o
             </label>
           </fieldset>
 
-          <div className="bot-setup-dialog__move-limit">
+          <div className="bot-setup-dialog__number-setting">
             <label htmlFor="bot-move-limit">Maximum full moves</label>
-            <div className="bot-setup-dialog__limit-input">
+            <div className="bot-setup-dialog__number-input">
               <input
                 id="bot-move-limit"
                 type="number"
@@ -153,20 +165,45 @@ function BotGameControls({ session, gameState, plyCount, defaultFilters, auth, o
                 aria-invalid={Boolean(moveLimitError)}
                 aria-describedby={moveLimitError ? "bot-move-limit-error" : undefined}
               />
-              <button
-                type="button"
-                className="bot-setup-dialog__info"
-                aria-label={`The game will terminate if the top1 move has been played less than ${MIN_TOP_MOVE_GAMES} times`}
-              >
-                i
-                <span className="bot-setup-dialog__tooltip" role="tooltip">
-                  The game will terminate if the top1 move has been played less than {MIN_TOP_MOVE_GAMES} times
-                </span>
-              </button>
             </div>
             {moveLimitError && (
               <p id="bot-move-limit-error" className="bot-setup-dialog__error" role="alert">
                 {moveLimitError}
+              </p>
+            )}
+          </div>
+
+          <div className="bot-setup-dialog__number-setting">
+            <label htmlFor="bot-minimum-games">Minimum rated games per position</label>
+            <div className="bot-setup-dialog__number-input">
+              <input
+                id="bot-minimum-games"
+                type="number"
+                min="1"
+                step="1"
+                inputMode="numeric"
+                value={minimumGames}
+                onChange={(event) => {
+                  setMinimumGames(event.target.value);
+                  setMinimumGamesError("");
+                }}
+                aria-invalid={Boolean(minimumGamesError)}
+                aria-describedby={minimumGamesError ? "bot-minimum-games-error" : undefined}
+              />
+              <button
+                type="button"
+                className="bot-setup-dialog__info"
+                aria-label={minimumTooltip}
+              >
+                i
+                <span className="bot-setup-dialog__tooltip" role="tooltip">
+                  {minimumTooltip}
+                </span>
+              </button>
+            </div>
+            {minimumGamesError && (
+              <p id="bot-minimum-games-error" className="bot-setup-dialog__error" role="alert">
+                {minimumGamesError}
               </p>
             )}
           </div>

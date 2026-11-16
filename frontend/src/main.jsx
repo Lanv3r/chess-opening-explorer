@@ -15,7 +15,7 @@ import EvaluationBar from "./EvaluationBar.jsx";
 import EnginePanel from "./EnginePanel.jsx";
 import GameResultDialog from "./GameResultDialog.jsx";
 import PopularMoves from "./PopularMoves.jsx";
-import { DEFAULT_MAX_FULL_MOVES } from "./botGame.js";
+import { DEFAULT_MAX_FULL_MOVES, DEFAULT_MIN_POSITION_GAMES } from "./botGame.js";
 import { allFilters } from "./explorerQuery.js";
 import { useLichessAuth } from "./lichessAuth.js";
 import { useBotGame } from "./useBotGame.js";
@@ -178,6 +178,7 @@ function App() {
     showEvaluation: false,
     showEngineMoves: false,
     maxFullMoves: DEFAULT_MAX_FULL_MOVES,
+    minimumGames: DEFAULT_MIN_POSITION_GAMES,
   });
 
   function startGame({
@@ -185,6 +186,7 @@ function App() {
     showEvaluation,
     showEngineMoves,
     maxFullMoves,
+    minimumGames,
     filters: gameFilters,
   }) {
     setSession((current) => ({
@@ -194,6 +196,7 @@ function App() {
       showEvaluation,
       showEngineMoves,
       maxFullMoves,
+      minimumGames,
       filters: gameFilters,
     }));
   }
