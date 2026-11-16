@@ -1,5 +1,17 @@
 import { Chess } from "chess.js";
 
+export function scoreForWhite(fen, line) {
+  return fen.split(" ")[1] === "b" ? -line.score : line.score;
+}
+
+export function whiteShare(fen, line) {
+  if (!line) return 50;
+  const score = scoreForWhite(fen, line);
+  if (line.scoreType === "mate") return score > 0 ? 100 : score < 0 ? 0 : 50;
+  // A bounded display scale for centipawns, not a win-probability estimate.
+  return Math.round(100 / (1 + Math.exp(-score / 180)));
+}
+
 function playUci(game, uci) {
   if (!/^[a-h][1-8][a-h][1-8][qrbn]?$/.test(uci)) return null;
   try {
@@ -15,7 +27,7 @@ function playUci(game, uci) {
 
 export function describeEngineLine(fen, line) {
   const fields = fen.split(" ");
-  const score = fields[1] === "b" ? -line.score : line.score;
+  const score = scoreForWhite(fen, line);
   const winningSide = score > 0 ? "white" : score < 0 ? "black" : "equal";
   const evaluation = line.scoreType === "mate"
     ? `${score < 0 ? "−" : ""}M${Math.abs(score)}`

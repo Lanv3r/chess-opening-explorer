@@ -3,7 +3,7 @@ import { useChess } from "@mdwebb/react-chess";
 import { describeEngineLine } from "./enginePresentation.js";
 import { StockfishController } from "./stockfishController.js";
 
-function EngineAnalysis() {
+function EngineAnalysis({ onSnapshotChange }) {
   const { fen, makeMove } = useChess();
   const latestFen = useRef(fen);
   const controllerRef = useRef(null);
@@ -17,7 +17,9 @@ function EngineAnalysis() {
   latestFen.current = fen;
 
   useEffect(() => {
-    setSnapshot({ status: "loading", fen: latestFen.current, lines: [] });
+    const loading = { status: "loading", fen: latestFen.current, lines: [] };
+    setSnapshot(loading);
+    onSnapshotChange(loading);
 
     // StrictMode cleans up the first effect before this starts the large worker.
     const timer = window.setTimeout(() => {
@@ -25,17 +27,22 @@ function EngineAnalysis() {
         const worker = new Worker(
           `${import.meta.env.BASE_URL}stockfish/stockfish-19-single.js`,
         );
-        const controller = new StockfishController(worker, setSnapshot);
+        const controller = new StockfishController(worker, (nextSnapshot) => {
+          setSnapshot(nextSnapshot);
+          onSnapshotChange(nextSnapshot);
+        });
         controllerRef.current = controller;
         controller.analyze(latestFen.current);
         controller.start();
       } catch {
-        setSnapshot({
+        const failed = {
           status: "error",
           message: "Could not start the Stockfish engine.",
           fen: latestFen.current,
           lines: [],
-        });
+        };
+        setSnapshot(failed);
+        onSnapshotChange(failed);
       }
     }, 0);
 
@@ -43,8 +50,9 @@ function EngineAnalysis() {
       window.clearTimeout(timer);
       controllerRef.current?.dispose();
       controllerRef.current = null;
+      onSnapshotChange(null);
     };
-  }, [attempt]);
+  }, [attempt, onSnapshotChange]);
 
   useEffect(() => {
     controllerRef.current?.analyze(fen);

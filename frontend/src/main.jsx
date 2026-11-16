@@ -1,4 +1,4 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
   Board,
@@ -9,6 +9,7 @@ import {
   useChess,
 } from "@mdwebb/react-chess";
 import "@mdwebb/react-chess/styles";
+import EvaluationBar from "./EvaluationBar.jsx";
 import EnginePanel from "./EnginePanel.jsx";
 import PopularMoves from "./PopularMoves.jsx";
 import "./styles.css";
@@ -49,6 +50,10 @@ function KeyboardNavigation() {
 }
 
 function App() {
+  const [engineRunning, setEngineRunning] = useState(false);
+  const [engineSnapshot, setEngineSnapshot] = useState(null);
+  const showEvaluationBar = engineRunning && engineSnapshot?.status !== "error";
+
   return (
     <main className="page">
       <header className="intro">
@@ -59,16 +64,22 @@ function App() {
       <section className="board-area" aria-label="Chess opening explorer">
         <ChessProvider theme="brown" enableKeyboardNavigation={false}>
           <KeyboardNavigation />
-          <div className="workspace">
+          <div className={`workspace${showEvaluationBar ? " workspace--with-evaluation" : ""}`}>
             <div className="board-column">
-              <Board width="var(--board-size)" height="var(--board-size)" />
+              <div className="board-with-evaluation">
+                {showEvaluationBar && <EvaluationBar snapshot={engineSnapshot} />}
+                <Board width="var(--board-size)" height="var(--board-size)" />
+              </div>
               <div className="board-controls">
                 <Navigation />
                 <BoardControls />
               </div>
             </div>
             <div className="history-column">
-              <EnginePanel />
+              <EnginePanel
+                onRunningChange={setEngineRunning}
+                onSnapshotChange={setEngineSnapshot}
+              />
               <MoveHistory
                 className="history-panel"
                 aria-label="Move history"

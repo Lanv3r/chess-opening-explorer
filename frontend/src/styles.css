@@ -77,8 +77,43 @@ p {
   overflow: hidden;
 }
 
+.workspace--with-evaluation {
+  grid-template-columns: calc(var(--board-size) + 24px) var(--history-size) minmax(0, 1fr);
+}
+
 .board-column {
   min-width: 0;
+}
+
+.board-with-evaluation {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+
+.evaluation-bar {
+  position: relative;
+  flex: none;
+  width: 18px;
+  height: var(--board-size);
+  overflow: hidden;
+  border: 1px solid #8c8881;
+  border-radius: 4px;
+  background: #25231f;
+}
+
+.evaluation-bar__white {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background: #fff;
+  transition: height 180ms ease;
+}
+
+.evaluation-bar--flipped .evaluation-bar__white {
+  top: 0;
+  bottom: auto;
 }
 
 .board-controls {
@@ -88,6 +123,10 @@ p {
   gap: 8px;
   width: var(--board-size);
   margin-top: 8px;
+}
+
+.workspace--with-evaluation .board-controls {
+  margin-left: 24px;
 }
 
 .board-controls .rc-board-controls {
@@ -634,6 +673,10 @@ p {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     grid-template-rows: max-content minmax(0, 1fr);
     gap: 12px;
+  }
+
+  .workspace--with-evaluation {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 
   .board-column {

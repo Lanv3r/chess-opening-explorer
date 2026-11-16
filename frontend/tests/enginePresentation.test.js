@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import { Chess } from "chess.js";
-import { describeEngineLine } from "../src/enginePresentation.js";
+import { describeEngineLine, whiteShare } from "../src/enginePresentation.js";
 
 test("shows a white badge and numbered moves when White is better", () => {
   const line = describeEngineLine(new Chess().fen(), {
@@ -45,4 +45,18 @@ test("shows a neutral badge for equality and the winner for mate", () => {
   });
   assert.equal(mate.evaluation, "−M3");
   assert.equal(mate.winningSide, "black");
+});
+
+test("evaluation bar follows White's score, including Black to move and mate", () => {
+  const whiteFen = new Chess().fen();
+  const game = new Chess();
+  game.move("e4");
+  const blackFen = game.fen();
+
+  assert.equal(whiteShare(whiteFen, null), 50);
+  assert.equal(whiteShare(whiteFen, { scoreType: "cp", score: 0 }), 50);
+  assert.ok(whiteShare(whiteFen, { scoreType: "cp", score: 150 }) > 50);
+  assert.ok(whiteShare(blackFen, { scoreType: "cp", score: 150 }) < 50);
+  assert.equal(whiteShare(whiteFen, { scoreType: "mate", score: 3 }), 100);
+  assert.equal(whiteShare(blackFen, { scoreType: "mate", score: 3 }), 0);
 });
