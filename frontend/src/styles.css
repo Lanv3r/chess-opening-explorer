@@ -68,24 +68,6 @@ body {
   background: #67492d;
 }
 
-.bot-game-controls__status {
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  max-width: 260px;
-  text-align: right;
-}
-
-.bot-game-controls__status strong {
-  font-size: 0.85rem;
-  line-height: 1.25;
-}
-
-.bot-game-controls__status small {
-  color: #68645d;
-  font-size: 0.72rem;
-}
-
 .bot-setup-dialog {
   width: min(600px, calc(100vw - 24px));
   max-height: calc(100dvh - 24px);
@@ -357,6 +339,10 @@ p {
   width: min(1160px, calc(100vw - 40px));
 }
 
+.board-area--bot {
+  --board-size: min(88vw, 520px, calc(100vw - 540px), max(100px, calc(100dvh - 210px)));
+}
+
 .workspace {
   display: grid;
   grid-template-columns: var(--board-size) var(--history-size) minmax(0, 1fr);
@@ -371,8 +357,37 @@ p {
   grid-template-columns: calc(var(--board-size) + 24px) var(--history-size) minmax(0, 1fr);
 }
 
+.workspace--bot .history-column,
+.workspace--bot .popular-moves {
+  margin-top: 28px;
+}
+
 .board-column {
   min-width: 0;
+}
+
+.board-turn-status {
+  width: var(--board-size);
+  height: 22px;
+  overflow: hidden;
+  color: #805c3a;
+  font-size: 0.88rem;
+  font-weight: 700;
+  line-height: 22px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.board-turn-status--above {
+  margin-bottom: 6px;
+}
+
+.board-turn-status--below {
+  margin-top: 6px;
+}
+
+.workspace--with-evaluation .board-turn-status {
+  margin-left: 24px;
 }
 
 .board-with-evaluation {
@@ -1092,6 +1107,11 @@ p {
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
   }
 
+  .workspace--bot .history-column,
+  .workspace--bot .popular-moves {
+    margin-top: 0;
+  }
+
   .board-column {
     grid-column: 1 / -1;
     justify-self: center;
@@ -1132,21 +1152,6 @@ p {
   .bot-game-controls > button {
     padding: 5px 7px;
     font-size: 0.72rem;
-  }
-
-  .bot-game-controls__status {
-    flex: 1 1 130px;
-    align-items: flex-start;
-    max-width: none;
-    text-align: left;
-  }
-
-  .bot-game-controls__status strong {
-    font-size: 0.72rem;
-  }
-
-  .bot-game-controls__status small {
-    font-size: 0.66rem;
   }
 
   .intro {

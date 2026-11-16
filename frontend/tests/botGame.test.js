@@ -5,6 +5,7 @@ import { chooseBotMove } from "../src/botMove.js";
 import { fetchExplorerPosition } from "../src/explorerData.js";
 import { boardMoveFromExplorer } from "../src/explorerMove.js";
 import {
+  currentFullMove,
   DEFAULT_MAX_FULL_MOVES,
   DEFAULT_MIN_POSITION_GAMES,
   gameOutcome,
@@ -44,6 +45,10 @@ test("bot turn and configured full-move ending use the correct side and ply coun
   const game = new Chess();
   assert.equal(isBotTurn(game.fen(), "white"), false);
   assert.equal(isBotTurn(game.fen(), "black"), true);
+  assert.equal(currentFullMove(0), 1);
+  assert.equal(currentFullMove(1), 1);
+  assert.equal(currentFullMove(2), 2);
+  assert.equal(currentFullMove(19), 10);
   assert.equal(gameOutcome(game, DEFAULT_MAX_FULL_MOVES * 2 - 1), null);
   assert.equal(gameOutcome(game, DEFAULT_MAX_FULL_MOVES * 2), "10 full moves complete.");
   assert.equal(gameOutcome(game, 1, 1), null);

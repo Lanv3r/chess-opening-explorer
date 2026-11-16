@@ -8,7 +8,7 @@ import {
 import ExplorerFilterFields from "./ExplorerFilterFields.jsx";
 import { copyFilters, dateRangeError, emptyFilters, gameSetupFilters } from "./explorerQuery.js";
 
-function BotGameControls({ session, gameState, plyCount, defaultFilters, auth, onStart, onExit }) {
+function BotGameControls({ session, gameState, defaultFilters, auth, onStart, onExit }) {
   const dialogRef = useRef(null);
   const [playerColor, setPlayerColor] = useState("white");
   const [showEvaluation, setShowEvaluation] = useState(false);
@@ -21,25 +21,22 @@ function BotGameControls({ session, gameState, plyCount, defaultFilters, auth, o
   const [dateError, setDateError] = useState("");
   const playing = session.mode === "bot";
   const finished = gameState.phase === "finished" || Boolean(gameState.outcome);
-  const maxFullMoves = session.maxFullMoves ?? DEFAULT_MAX_FULL_MOVES;
-  const completedMoves = Math.min(Math.floor(plyCount / 2), maxFullMoves);
   const parsedMinimum = parseMinimumGames(minimumGames);
   const minimumTooltip = parsedMinimum === null
     ? "The game ends when a position has fewer rated games than this minimum."
     : `The game will terminate if fewer than ${parsedMinimum} rated games have reached this position`;
 
-  const status = gameState.botStatus === "auth-required"
-    ? "Connect Lichess to continue."
-    : gameState.botStatus === "error"
-      ? gameState.message
-      : gameState.botTurn
-        ? "Bot is choosing a move…"
-        : gameState.positionReady
-          ? "Your move"
-          : "Checking opening…";
-
   function openSetup() {
-    setGameFilters(gameSetupFilters(defaultFilters));
+    if (playing) {
+      setPlayerColor(session.playerColor);
+      setShowEvaluation(session.showEvaluation);
+      setShowEngineMoves(session.showEngineMoves);
+      setMoveLimit(String(session.maxFullMoves ?? DEFAULT_MAX_FULL_MOVES));
+      setMinimumGames(String(session.minimumGames ?? DEFAULT_MIN_POSITION_GAMES));
+      setGameFilters(copyFilters(session.filters));
+    } else {
+      setGameFilters(gameSetupFilters(defaultFilters));
+    }
     setDateError("");
     setMoveLimitError("");
     setMinimumGamesError("");
@@ -81,30 +78,10 @@ function BotGameControls({ session, gameState, plyCount, defaultFilters, auth, o
     <div className="bot-game-controls">
       {playing ? (
         <>
-          {!finished && (
-            <div className="bot-game-controls__status" aria-live="polite">
-              <strong>{status}</strong>
-              <small>{completedMoves} / {maxFullMoves} full moves</small>
-            </div>
-          )}
           {gameState.botStatus === "error" && !finished && (
             <button type="button" onClick={gameState.retry}>Retry bot</button>
           )}
-          {finished && (
-            <button
-              type="button"
-              onClick={() => onStart({
-                playerColor: session.playerColor,
-                showEvaluation: session.showEvaluation,
-                showEngineMoves: session.showEngineMoves,
-                maxFullMoves: session.maxFullMoves,
-                minimumGames: session.minimumGames,
-                filters: copyFilters(session.filters),
-              })}
-            >
-              New game
-            </button>
-          )}
+          <button type="button" onClick={openSetup}>New game</button>
           <button type="button" onClick={onExit}>Explore</button>
         </>
       ) : (

@@ -16,6 +16,10 @@ export function isPositionTooRare(totalGames, minimumGames = DEFAULT_MIN_POSITIO
   return totalGames < minimumGames;
 }
 
+export function currentFullMove(plyCount) {
+  return Math.floor(plyCount / 2) + 1;
+}
+
 export function isBotTurn(fen, playerColor) {
   return fen.split(" ")[1] !== playerColor[0];
 }

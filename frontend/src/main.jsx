@@ -15,7 +15,7 @@ import EvaluationBar from "./EvaluationBar.jsx";
 import EnginePanel from "./EnginePanel.jsx";
 import GameResultDialog from "./GameResultDialog.jsx";
 import PopularMoves from "./PopularMoves.jsx";
-import { DEFAULT_MAX_FULL_MOVES, DEFAULT_MIN_POSITION_GAMES } from "./botGame.js";
+import { currentFullMove, DEFAULT_MAX_FULL_MOVES, DEFAULT_MIN_POSITION_GAMES } from "./botGame.js";
 import { allFilters } from "./explorerQuery.js";
 import { useLichessAuth } from "./lichessAuth.js";
 import { useBotGame } from "./useBotGame.js";
@@ -81,6 +81,15 @@ function Workspace({
   const boardLocked = botMode && !canPlay;
   const autoStartEngine = botMode &&
     (session.showEvaluation || session.showEngineMoves || finished);
+  const turnNotice = botGame.botStatus === "error"
+    ? botGame.message
+    : botGame.botStatus === "auth-required"
+      ? "Connect Lichess to continue."
+      : botGame.botTurn
+        ? "Bot's move (thinking...)"
+        : botGame.positionReady
+          ? `Your move (${currentFullMove(moveHistory.length)}/${session.maxFullMoves ?? DEFAULT_MAX_FULL_MOVES})`
+          : "Checking opening...";
 
   useEffect(() => {
     syncBoardTurn(api, fen);
@@ -96,7 +105,6 @@ function Workspace({
         <BotGameControls
           session={session}
           gameState={botGame}
-          plyCount={moveHistory.length}
           defaultFilters={mainFilters}
           auth={auth}
           onStart={onStartGame}
@@ -104,10 +112,19 @@ function Workspace({
         />
       </header>
 
-      <section className="board-area" aria-label="Chess opening explorer">
+      <section className={`board-area${botMode ? " board-area--bot" : ""}`} aria-label="Chess opening explorer">
         <KeyboardNavigation disabled={botGame.active || showResult} />
-        <div className={`workspace${showEvaluationBar ? " workspace--with-evaluation" : ""}`}>
+        <div className={`workspace${botMode ? " workspace--bot" : ""}${showEvaluationBar ? " workspace--with-evaluation" : ""}`}>
           <div className="board-column">
+            {botMode && (
+              <div
+                className="board-turn-status board-turn-status--above"
+                aria-live="polite"
+                title={botGame.active && botGame.botTurn ? turnNotice : undefined}
+              >
+                {botGame.active && botGame.botTurn ? turnNotice : null}
+              </div>
+            )}
             <div className="board-with-evaluation">
               {showEvaluationBar && <EvaluationBar snapshot={engineSnapshot} />}
               <div className="board-input-area">
@@ -129,6 +146,15 @@ function Workspace({
                 )}
               </div>
             </div>
+            {botMode && (
+              <div
+                className="board-turn-status board-turn-status--below"
+                aria-live="polite"
+                title={botGame.active && !botGame.botTurn ? turnNotice : undefined}
+              >
+                {botGame.active && !botGame.botTurn ? turnNotice : null}
+              </div>
+            )}
             <div className="board-controls">
               {!botGame.active && !showResult && <Navigation />}
               {!showResult && <BoardControls />}
