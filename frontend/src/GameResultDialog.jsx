@@ -18,7 +18,7 @@ function GameResultDialog({ game, fen, playerColor, reason, snapshot, onClose })
       <section
         className="game-result-dialog"
         role="dialog"
-        aria-labelledby="game-result-title"
+        aria-labelledby={decisive ? "game-result-title" : "game-result-label"}
         aria-describedby="game-result-reason"
         onKeyDown={(event) => { if (event.key === "Escape") onClose(); }}
       >
@@ -31,8 +31,8 @@ function GameResultDialog({ game, fen, playerColor, reason, snapshot, onClose })
         >
           ×
         </button>
-        <span className="eyebrow">Game finished</span>
-        <h2 id="game-result-title">{decisive?.title || "Opening complete"}</h2>
+        <span className="eyebrow" id="game-result-label">Game finished</span>
+        {decisive && <h2 id="game-result-title">{decisive.title}</h2>}
         <p id="game-result-reason">{decisive?.reason || reason}</p>
         {!decisive && (
           evaluation ? (
