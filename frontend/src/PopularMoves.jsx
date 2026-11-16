@@ -2,22 +2,25 @@ import React, { useEffect, useRef, useState } from "react";
 import { useChess } from "@mdwebb/react-chess";
 import {
   buildExplorerUrl,
+  copyFilters,
+  dateRangeError,
   emptyFilters,
   RATING_GROUPS,
   TIME_CONTROLS,
 } from "./explorerQuery.js";
 import { boardMoveFromExplorer } from "./explorerMove.js";
+import ExplorerFilterFields from "./ExplorerFilterFields.jsx";
+import {
+  cachedExplorerPosition,
+  fetchExplorerPosition,
+  gameCount,
+} from "./explorerData.js";
 
-const resultsCache = new Map();
 const compactNumber = new Intl.NumberFormat("en", {
   notation: "compact",
   maximumFractionDigits: 1,
 });
 const fullNumber = new Intl.NumberFormat("en");
-
-function gameCount(entry) {
-  return (entry.white ?? 0) + (entry.draws ?? 0) + (entry.black ?? 0);
-}
 
 function formatShare(share) {
   if (share > 0 && share < 0.1) return "<0.1%";
@@ -25,10 +28,12 @@ function formatShare(share) {
 }
 
 function filterSummary(filters) {
-  const ratings = filters.ratings.length
+  const ratings = filters.ratings.length > 0 &&
+    filters.ratings.length < RATING_GROUPS.length
     ? `${filters.ratings.length} rating band${filters.ratings.length === 1 ? "" : "s"}`
     : "All ratings";
-  const speeds = filters.speeds.length
+  const speeds = filters.speeds.length > 0 &&
+    filters.speeds.length < TIME_CONTROLS.length
     ? TIME_CONTROLS.filter(({ value }) => filters.speeds.includes(value))
         .map(({ label }) => label)
         .join(", ")
@@ -44,14 +49,21 @@ function filterSummary(filters) {
   return [ratings, speeds, dates].filter(Boolean).join(" · ");
 }
 
-function PopularMoves() {
+function PopularMoves({
+  auth,
+  filters,
+  onFiltersChange,
+  canPlayMoves = true,
+  fetchEnabled = true,
+  externalPosition = null,
+  externalError = false,
+}) {
   const { fen, makeMove } = useChess();
   const dialogRef = useRef(null);
-  const [filters, setFilters] = useState(emptyFilters);
-  const [draft, setDraft] = useState(emptyFilters);
+  const [draft, setDraft] = useState(filters);
   const [dateError, setDateError] = useState("");
   const [retryCount, setRetryCount] = useState(0);
-  const [result, setResult] = useState({ key: null, status: "loading", data: null });
+  const [result, setResult] = useState({ key: null, status: "loading", data: null, error: "" });
   const requestUrl = buildExplorerUrl(fen, filters);
   const activeFilterCount =
     filters.ratings.length +
@@ -60,7 +72,8 @@ function PopularMoves() {
     Number(Boolean(filters.until));
 
   useEffect(() => {
-    const cached = resultsCache.get(requestUrl);
+    if (!fetchEnabled || auth.status !== "connected") return;
+    const cached = cachedExplorerPosition(requestUrl);
     if (cached) {
       setResult({ key: requestUrl, status: "ready", data: cached });
       return;
@@ -72,28 +85,14 @@ function PopularMoves() {
     // Avoid a request for every intermediate position during quick navigation.
     const timer = window.setTimeout(async () => {
       try {
-        const response = await fetch(requestUrl, {
-          signal: controller.signal,
-          headers: { Accept: "application/json" },
-        });
-        if (!response.ok) throw new Error(`Lichess returned ${response.status}`);
-
-        const data = await response.json();
-        if (!Array.isArray(data.moves)) throw new Error("Invalid Lichess response");
-
-        const prepared = {
-          totalGames: gameCount(data),
-          moves: [...data.moves]
-            .sort((a, b) => gameCount(b) - gameCount(a))
-            .slice(0, 10),
-        };
-        resultsCache.set(requestUrl, prepared);
+        const prepared = await fetchExplorerPosition(requestUrl, controller.signal, auth.token);
         if (!controller.signal.aborted) {
           setResult({ key: requestUrl, status: "ready", data: prepared });
         }
-      } catch {
+      } catch (error) {
         if (!controller.signal.aborted) {
-          setResult({ key: requestUrl, status: "error", data: null });
+          if (error.status === 401 || error.status === 403) auth.invalidate();
+          else setResult({ key: requestUrl, status: "error", data: null, error: error.message });
         }
       }
     }, 200);
@@ -102,10 +101,10 @@ function PopularMoves() {
       window.clearTimeout(timer);
       controller.abort();
     };
-  }, [requestUrl, retryCount]);
+  }, [requestUrl, retryCount, fetchEnabled, auth.status, auth.token]);
 
   function openFilters() {
-    setDraft({ ...filters, ratings: [...filters.ratings], speeds: [...filters.speeds] });
+    setDraft(copyFilters(filters));
     setDateError("");
     if (!dialogRef.current?.open) dialogRef.current?.showModal();
   }
@@ -121,15 +120,29 @@ function PopularMoves() {
 
   function applyFilters(event) {
     event.preventDefault();
-    if (draft.since && draft.until && draft.since > draft.until) {
-      setDateError("Start month must be before end month.");
+    const error = dateRangeError(draft);
+    if (error) {
+      setDateError(error);
       return;
     }
-    setFilters(draft);
+    onFiltersChange(draft);
     dialogRef.current?.close();
   }
 
-  const visibleResult = result.key === requestUrl ? result : { status: "loading" };
+  let visibleResult;
+  if (auth.status === "connecting") {
+    visibleResult = { status: "auth-loading" };
+  } else if (auth.status !== "connected") {
+    visibleResult = { status: "auth-required" };
+  } else if (!fetchEnabled) {
+    visibleResult = externalError
+      ? { status: "bot-error" }
+      : externalPosition?.key === requestUrl && externalPosition.data
+        ? { status: "ready", data: externalPosition.data }
+        : { status: "paused" };
+  } else {
+    visibleResult = result.key === requestUrl ? result : { status: "loading" };
+  }
   const moves = visibleResult.data?.moves ?? [];
   const totalGames = visibleResult.data?.totalGames ?? 0;
 
@@ -152,10 +165,19 @@ function PopularMoves() {
       <p className="popular-moves__description">{filterSummary(filters)}</p>
 
       <div className="popular-moves__content" aria-live="polite">
+        {visibleResult.status === "auth-loading" && <p>Connecting to Lichess…</p>}
+        {visibleResult.status === "auth-required" && (
+          <div className="popular-moves__message">
+            <p>{auth.error || "Connect Lichess to load rated moves."}</p>
+            <button type="button" onClick={auth.connect}>Connect Lichess</button>
+          </div>
+        )}
+        {visibleResult.status === "paused" && <p>Checking rated moves…</p>}
+        {visibleResult.status === "bot-error" && <p>Could not check this position. Use Retry bot above.</p>}
         {visibleResult.status === "loading" && <p>Loading Lichess moves…</p>}
         {visibleResult.status === "error" && (
           <div className="popular-moves__message">
-            <p>Could not load Lichess moves for this position.</p>
+            <p>{visibleResult.error || "Could not load Lichess moves for this position."}</p>
             <button type="button" onClick={() => setRetryCount((count) => count + 1)}>
               Try again
             </button>
@@ -179,6 +201,7 @@ function PopularMoves() {
                     <button
                       className="popular-moves__row"
                       type="button"
+                      disabled={!canPlayMoves}
                       onClick={() => {
                         const { from, to, promotion } = boardMoveFromExplorer(move);
                         makeMove(from, to, promotion);
@@ -222,68 +245,15 @@ function PopularMoves() {
           </div>
 
           <div className="filters-dialog__body">
-            <p>Select multiple options. Leaving a group empty includes all of it.</p>
-
-            <fieldset>
-              <legend>Rating bands</legend>
-              <div className="filters-dialog__options">
-                {RATING_GROUPS.map(({ value, label }) => (
-                  <label className="filters-dialog__option" key={value}>
-                    <input
-                      type="checkbox"
-                      checked={draft.ratings.includes(value)}
-                      onChange={() => toggleDraft("ratings", value)}
-                    />
-                    {label}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-
-            <fieldset>
-              <legend>Time controls</legend>
-              <div className="filters-dialog__options">
-                {TIME_CONTROLS.map(({ value, label }) => (
-                  <label className="filters-dialog__option" key={value}>
-                    <input
-                      type="checkbox"
-                      checked={draft.speeds.includes(value)}
-                      onChange={() => toggleDraft("speeds", value)}
-                    />
-                    {label}
-                  </label>
-                ))}
-              </div>
-            </fieldset>
-
-            <fieldset>
-              <legend>Game dates</legend>
-              <div className="filters-dialog__dates">
-                <label>
-                  From
-                  <input
-                    type="month"
-                    value={draft.since}
-                    onChange={(event) => {
-                      setDraft((current) => ({ ...current, since: event.target.value }));
-                      setDateError("");
-                    }}
-                  />
-                </label>
-                <label>
-                  Through
-                  <input
-                    type="month"
-                    value={draft.until}
-                    onChange={(event) => {
-                      setDraft((current) => ({ ...current, until: event.target.value }));
-                      setDateError("");
-                    }}
-                  />
-                </label>
-              </div>
-              {dateError && <p className="filters-dialog__error" role="alert">{dateError}</p>}
-            </fieldset>
+            <ExplorerFilterFields
+              value={draft}
+              onToggle={toggleDraft}
+              onDateChange={(field, value) => {
+                setDraft((current) => ({ ...current, [field]: value }));
+                setDateError("");
+              }}
+              error={dateError}
+            />
           </div>
 
           <div className="filters-dialog__footer">

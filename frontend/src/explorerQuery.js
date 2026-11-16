@@ -25,6 +25,39 @@ export function emptyFilters() {
   return { ratings: [], speeds: [], since: "", until: "" };
 }
 
+export function allFilters() {
+  return {
+    ratings: RATING_GROUPS.map(({ value }) => value),
+    speeds: TIME_CONTROLS.map(({ value }) => value),
+    since: "",
+    until: "",
+  };
+}
+
+export function copyFilters(filters) {
+  return {
+    ratings: [...filters.ratings],
+    speeds: [...filters.speeds],
+    since: filters.since,
+    until: filters.until,
+  };
+}
+
+export function gameSetupFilters(explorerFilters) {
+  if (explorerFilters.ratings.length || explorerFilters.speeds.length ||
+      explorerFilters.since || explorerFilters.until) {
+    return copyFilters(explorerFilters);
+  }
+
+  return allFilters();
+}
+
+export function dateRangeError(filters) {
+  return filters.since && filters.until && filters.since > filters.until
+    ? "Start month must be before end month."
+    : "";
+}
+
 export function buildExplorerUrl(fen, filters) {
   const url = new URL(EXPLORER_URL);
   url.searchParams.set("variant", "standard");

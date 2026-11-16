@@ -3,7 +3,7 @@ import { useChess } from "@mdwebb/react-chess";
 import { describeEngineLine } from "./enginePresentation.js";
 import { StockfishController } from "./stockfishController.js";
 
-function EngineAnalysis({ onSnapshotChange }) {
+function EngineAnalysis({ onSnapshotChange, canPlayMoves = true }) {
   const { fen, makeMove } = useChess();
   const latestFen = useRef(fen);
   const controllerRef = useRef(null);
@@ -95,6 +95,7 @@ function EngineAnalysis({ onSnapshotChange }) {
                       <li key={line.rank}>
                         <button
                           type="button"
+                          disabled={!canPlayMoves}
                           title={sequence}
                           onClick={() =>
                             makeMove(uci.slice(0, 2), uci.slice(2, 4), uci[4])
