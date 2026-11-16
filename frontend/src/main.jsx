@@ -10,6 +10,7 @@ import {
 } from "@mdwebb/react-chess";
 import "@mdwebb/react-chess/styles";
 import BotGameControls from "./BotGameControls.jsx";
+import { syncBoardTurn } from "./boardTurn.js";
 import EvaluationBar from "./EvaluationBar.jsx";
 import EnginePanel from "./EnginePanel.jsx";
 import GameResultDialog from "./GameResultDialog.jsx";
@@ -65,7 +66,7 @@ function Workspace({
   onStartGame,
   onExitGame,
 }) {
-  const { fen, game, moveHistory } = useChess();
+  const { api, fen, game, moveHistory } = useChess();
   const botMode = session.mode === "bot";
   const activeFilters = botMode ? session.filters : mainFilters;
   const botGame = useBotGame(session, activeFilters, auth);
@@ -80,6 +81,10 @@ function Workspace({
   const boardLocked = botMode && !canPlay;
   const autoStartEngine = botMode &&
     (session.showEvaluation || session.showEngineMoves || finished);
+
+  useEffect(() => {
+    syncBoardTurn(api, fen);
+  }, [api, fen]);
 
   return (
     <>
